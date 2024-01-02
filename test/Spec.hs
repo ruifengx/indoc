@@ -1,7 +1,9 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE QuasiQuotes    #-}
 
 import Test.Hspec
 
+import Data.String.Indoc (indoc)
 import Data.String.Unindent (unindent)
 
 main :: IO ()
@@ -30,3 +32,30 @@ main = hspec do
       unindent "  a\n    \n    b" `shouldBe` "a\n\n  b"
     it "ignores unindented empty lines" do
       unindent "  a\n\n    b" `shouldBe` "a\n\n  b"
+  describe "indoc" do
+    it "quotes a string literal expression" do
+      let lhs = [indoc|
+              some arbitrary
+                indented
+                  text
+              with
+              different
+                levels
+            |]
+          rhs = unlines
+            [ "some arbitrary"
+            , "  indented"
+            , "    text"
+            , "with"
+            , "different"
+            , "  levels"
+            ]
+      lhs `shouldBe` rhs
+    it "quotes a string literal pattern" do
+      let p :: String -> Int
+          p [indoc|xxx|] = 1
+          p [indoc|yyy|] = 2
+          p _            = 0
+      p "xxx" `shouldBe` 1
+      p "yyy" `shouldBe` 2
+      p "zzz" `shouldBe` 0
