@@ -19,13 +19,16 @@ unindent s = concatMap trans theLines
     dropEmpty xs = xs
 
 breakLines :: String -> [String]
-breakLines "" = []
-breakLines s = firstLine : breakLines rest
-  where (firstLine, rest) = breakAfter (== '\n') s
+breakLines s
+  | lfFound || nonEmpty = firstLine : breakLines rest
+  | otherwise = []
+  where (lfFound, firstLine, rest) = breakAfter (== '\n') s
+        nonEmpty = not (all isSpace firstLine)
 
-breakAfter :: (a -> Bool) -> [a] -> ([a], [a])
+breakAfter :: (a -> Bool) -> [a] -> (Bool, [a], [a])
 breakAfter p = go
-  where go [] = ([], [])
+  where go [] = (False, [], [])
         go (x : xs)
-          | p x = ([x], xs)
-          | otherwise = let (ys, zs) = go xs in (x : ys, zs)
+          | p x = (True, [x], xs)
+          | otherwise = (found, x : ys, zs)
+          where (found, ys, zs) = go xs

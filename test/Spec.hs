@@ -13,10 +13,13 @@ main = hspec do
       unindent "no line ending" `shouldBe` "no line ending"
     it "preserves a single line" do
       unindent "a single line\n" `shouldBe` "a single line\n"
-    it "drops a leading empty line" do
+    it "drops the first empty line" do
       unindent "\nit gets dropped" `shouldBe` "it gets dropped"
-    it "drops only one leading empty line" do
+    it "keeps the second empty line" do
       unindent "\n\nthe second is kept" `shouldBe` "\nthe second is kept"
+    it "keeps the trailing empty line" do
+      unindent "this is kept\n" `shouldBe` "this is kept\n"
+      unindent "this is kept\n  " `shouldBe` "this is kept\n"
     it "drops leading whitespace" do
       unindent "\n  indented\n    more indented\n  back"
         `shouldBe` "indented\n  more indented\nback"
