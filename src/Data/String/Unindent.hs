@@ -14,7 +14,7 @@ unindent s = concatMap trans theLines
       & filter (not . all isSpace)
       & map (length . takeWhile isSpace)
       & minimum
-    theLines = dropEmpty (breakLines s)
+    theLines = dropEmpty (breakLines (filter (/= '\r') s))
     dropEmpty (x : xs) | all isSpace x = xs
     dropEmpty xs = xs
 
