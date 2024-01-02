@@ -9,3 +9,6 @@ and this project adheres to the
 ## Unreleased
 
 ## 0.1.0.0 - YYYY-MM-DD
+
+- add `Data.String.Unindent.unindent` function: runtime unindent string values
+- add `Data.String.Indoc.indoc` quasi-quoter: compile time unindent string literals
