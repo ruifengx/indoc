@@ -3,6 +3,15 @@
 
 import Test.Hspec
 
+import Data.String.Format
+  ( Alignment (ARight)
+  , FormatArgument (..)
+  , FormatFragment (..)
+  , FormatStyle (..)
+  , Selector (..)
+  , defaultFormatStyle
+  )
+import Data.String.Format.Parser (parseFormat, parseFormatArgument)
 import Data.String.Indoc (indoc)
 import Data.String.Unindent (unindent)
 
@@ -59,3 +68,121 @@ main = hspec do
       p "xxx" `shouldBe` 1
       p "yyy" `shouldBe` 2
       p "zzz" `shouldBe` 0
+  describe "parseFormat" do
+    it "parses string without format arguments" do
+      parseFormat "there is no argument" `shouldBe` Right [TextFragment "there is no argument"]
+    it "parses string with escaped braces" do
+      parseFormat "}} weird {{ combinations {{"
+        `shouldBe` Right (map TextFragment ["}", " weird ", "{", " combinations ", "{"])
+    it "parses string with format arguments" do
+      parseFormat "some argument {} here" `shouldBe` Right
+        [ TextFragment "some argument "
+        , ArgFragment FormatArgument
+          { selector = Index 0
+          , style = defaultFormatStyle
+          , kind = ""
+          }
+        , TextFragment " here"
+        ]
+    it "parses rich format strings" do
+      parseFormat "xyz = {{{xyz:#?}}}, abc = {:+#0};" `shouldBe` Right
+        [ TextFragment "xyz = "
+        , TextFragment "{"
+        , ArgFragment FormatArgument
+          { selector = Name "xyz"
+          , style = defaultFormatStyle { alternate = True }
+          , kind = "?"
+          }
+        , TextFragment "}"
+        , TextFragment ", abc = "
+        , ArgFragment FormatArgument
+          { selector = Index 0
+          , style = defaultFormatStyle
+            { alternate = True
+            , signPlus = True
+            , signZero = True
+            }
+          , kind = ""
+          }
+        , TextFragment ";"
+        ]
+  describe "parseFormatArgument" do
+    it "parses empty argument" do
+      parseFormatArgument "" `shouldBe` Right
+        FormatArgument
+        { selector = Index 0
+        , style = defaultFormatStyle
+        , kind = ""
+        }
+    it "parses alignment without fill character" do
+      parseFormatArgument ":>x" `shouldBe` Right
+        FormatArgument
+        { selector = Index 0
+        , style = defaultFormatStyle { alignment = Just ARight }
+        , kind = "x"
+        }
+    it "parses alignment with fill character" do
+      parseFormatArgument ":~>x" `shouldBe` Right
+        FormatArgument
+        { selector = Index 0
+        , style = defaultFormatStyle { alignment = Just ARight, fillChar = Just '~' }
+        , kind = "x"
+        }
+    it "parses plus or minus sign" do
+      parseFormatArgument ":+p" `shouldBe` Right
+        FormatArgument
+        { selector = Index 0
+        , style = defaultFormatStyle { signPlus = True }
+        , kind = "p"
+        }
+      parseFormatArgument ":-p" `shouldBe` Right
+        FormatArgument
+        { selector = Index 0
+        , style = defaultFormatStyle { signMinus = True }
+        , kind = "p"
+        }
+    it "rejects both plus and minus sign" do
+      parseFormatArgument ":+-x" `shouldBe` Left
+        "at offset 2: unexpected extra text in format argument: -x"
+    it "parses alternate sign" do
+      parseFormatArgument ":#o" `shouldBe` Right
+        FormatArgument
+        { selector = Index 0
+        , style = defaultFormatStyle { alternate = True }
+        , kind = "o"
+        }
+    it "parses zero sign" do
+      parseFormatArgument ":0X" `shouldBe` Right
+        FormatArgument
+        { selector = Index 0
+        , style = defaultFormatStyle { signZero = True }
+        , kind = "X"
+        }
+    it "parses argument width" do
+      parseFormatArgument ":10x" `shouldBe` Right
+        FormatArgument
+        { selector = Index 0
+        , style = defaultFormatStyle { width = Just 10 }
+        , kind = "x"
+        }
+    it "parses argument precision" do
+      parseFormatArgument ":.10e" `shouldBe` Right
+        FormatArgument
+        { selector = Index 0
+        , style = defaultFormatStyle { precision = Just 10 }
+        , kind = "e"
+        }
+    it "rejects parameters in wrong order" do
+      parseFormatArgument ":#+0" `shouldBe` Left
+        "at offset 2: unexpected extra text in format argument: +0"
+    it "allows trailing whitespace" do
+      parseFormatArgument ":+#0?  " `shouldBe` Right
+        FormatArgument
+        { selector = Index 0
+        , style = defaultFormatStyle
+          { signPlus = True
+          , alternate = True
+          , signZero = True
+          }
+        , kind = "?"
+        }

@@ -216,7 +216,7 @@ steps:
       #   >     )
       #
       # Default: inline
-      long_list_align: new_line
+      long_list_align: new_line_multiline
 
       # Align empty list (importing instances)
       #

@@ -25,6 +25,8 @@ source-repository head
 
 library
   exposed-modules:
+      Data.String.Format
+      Data.String.Format.Parser
       Data.String.Indoc
       Data.String.Unindent
   other-modules:
@@ -36,8 +38,10 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       base >=4.7 && <5
+    , mtl
     , template-haskell
-  default-language: Haskell2010
+    , text
+  default-language: GHC2021
 
 test-suite indoc-test
   type: exitcode-stdio-1.0
@@ -53,4 +57,6 @@ test-suite indoc-test
       base >=4.7 && <5
     , hspec
     , indoc
-  default-language: Haskell2010
+    , mtl
+    , text
+  default-language: GHC2021
