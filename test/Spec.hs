@@ -8,6 +8,7 @@ import Data.String.Format
   , FormatArgument (..)
   , FormatFragment (..)
   , FormatStyle (..)
+  , Parameter (..)
   , Selector (..)
   , defaultFormatStyle
   )
@@ -158,20 +159,32 @@ main = hspec do
         , style = defaultFormatStyle { signZero = True }
         , kind = "X"
         }
-    it "parses argument width" do
-      parseFormatArgument ":10x" `shouldBe` Right
-        FormatArgument
-        { selector = Index 0
-        , style = defaultFormatStyle { width = Just 10 }
-        , kind = "x"
-        }
-    it "parses argument precision" do
-      parseFormatArgument ":.10e" `shouldBe` Right
-        FormatArgument
-        { selector = Index 0
-        , style = defaultFormatStyle { precision = Just 10 }
-        , kind = "e"
-        }
+    describe "argument width" do
+      let arg w = FormatArgument
+            { selector = Index 0
+            , style = defaultFormatStyle { width = Just w }
+            , kind = "x"
+            }
+      it "parses constant argument width" do
+        parseFormatArgument ":10x" `shouldBe` Right (arg (Constant 10))
+      it "parses explicit positional argument width" do
+        parseFormatArgument ":3$x" `shouldBe` Right (arg (Selector (Index 3)))
+      it "parses named argument width" do
+        parseFormatArgument ":width$x" `shouldBe` Right (arg (Selector (Name "width")))
+    describe "argument precision" do
+      let arg p = FormatArgument
+            { selector = Index 0
+            , style = defaultFormatStyle { precision = Just p }
+            , kind = "e"
+            }
+      it "parses constant precision" do
+        parseFormatArgument ":.10e" `shouldBe` Right (arg (Constant 10))
+      it "parses explicit positional argument precision" do
+        parseFormatArgument ":.3$e" `shouldBe` Right (arg (Selector (Index 3)))
+      it "parses implicit positional argument precision" do
+        parseFormatArgument ":.*e" `shouldBe` Right (arg (Selector (Index 1)))
+      it "parses named argument precision" do
+        parseFormatArgument ":.precision$e" `shouldBe` Right (arg (Selector (Name "precision")))
     it "rejects parameters in wrong order" do
       parseFormatArgument ":#+0" `shouldBe` Left
         "at offset 2: unexpected extra text in format argument: +0"

@@ -30,6 +30,7 @@ import Data.String.Format
   , FormatArgument (..)
   , FormatFragment (..)
   , FormatStyle (..)
+  , Parameter (..)
   , Selector (..)
   , defaultFormatStyle
   )
@@ -160,8 +161,8 @@ scoped scope p = do
   put (PState s n' offset)
   pure a
 
-nextIndex :: P s Int
-nextIndex = state (\(PState s n k) -> (n, PState s (succ n) k))
+nextIndex :: P s (Selector s)
+nextIndex = state (\(PState s n k) -> (Index n, PState s (succ n) k))
 
 munch :: Source s => (Char -> Bool) -> P s s
 munch p = state (\(PState s n k) -> let (t, s') = span p s in (t, PState s' n (k + length t)))
@@ -200,9 +201,15 @@ identifier = lookahead (satisfy "identifier" isIdStart) *> munch isIdChar
   where isIdChar c = isAlphaNum c || c == '_'
         isIdStart c = isAlpha c || c == '_'
 
+count :: Source s => P s (Parameter s)
+count = Selector <$> argument <* char '$' <|> Constant <$> integer
+
+argument :: Source s => P s (Selector s)
+argument = Name <$> identifier <|> Index <$> integer
+
 formatArgument :: Source s => P s (FormatArgument s)
 formatArgument = do
-  selector <- Name <$> identifier <|> Index <$> (integer <|> nextIndex)
+  selector <- argument <|> nextIndex
   spec <- optional $ do
     char ':'
     let align = char '<' $> ALeft <|> char '^' $> ACentre <|> char '>' $> ARight
@@ -214,8 +221,8 @@ formatArgument = do
       <|> pure (False, False)
     alternate <- isJust <$> optional (char '#')
     signZero <- isJust <$> optional (char '0')
-    width <- optional integer
-    precision <- optional (char '.' *> integer)
+    width <- optional count
+    precision <- optional (char '.' *> (count <|> char '*' *> (Selector <$> nextIndex)))
     kind <- string "?" $> fromString "?" <|> identifier <|> pure empty
     pure (FormatStyle {..}, kind)
   -- Rust allows trailing space, let's also allow it
