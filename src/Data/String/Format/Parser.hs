@@ -1,5 +1,4 @@
 -- | Parser for format strings.
-{-# LANGUAGE DerivingVia     #-}
 {-# LANGUAGE RecordWildCards #-}
 module Data.String.Format.Parser
   ( Source (..)

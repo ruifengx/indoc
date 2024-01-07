@@ -26,6 +26,27 @@ dependencies:
 
 language: GHC2021
 
+default-extensions:
+# type system
+- DataKinds
+- TypeFamilies
+- FunctionalDependencies
+# deriving
+- DeriveAnyClass
+- DerivingVia
+- DerivingStrategies
+# patterns
+- PatternSynonyms
+- ViewPatterns
+# syntax
+- LambdaCase
+- BlockArguments
+- DefaultSignatures
+# records
+- NoFieldSelectors
+- DuplicateRecordFields
+- OverloadedRecordDot
+
 ghc-options:
 - -Wall
 - -Wcompat

@@ -1,5 +1,4 @@
-{-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE QuasiQuotes    #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 import Test.Hspec
 
