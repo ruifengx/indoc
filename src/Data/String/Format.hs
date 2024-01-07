@@ -4,14 +4,20 @@ module Data.String.Format
   , defaultFormatStyle
   , Alignment (..)
   , Parameter (..)
+  , FormatTarget (..)
   , FormatFunc
   , FormatFragment (..)
   , FormatArgument (..)
   , Selector (..)
   ) where
 
+import Data.Kind (Type)
+import Data.Text (Text)
+import Data.Text.Lazy.Builder (Builder)
+import Data.Text.Lazy.Builder qualified as TB
+
 -- | Format style information extracted from the format string.
-data FormatStyle s = FormatStyle
+data FormatStyle p = FormatStyle
   -- | Alignment: left, right, centre, or none.
   { alignment :: !(Maybe Alignment)
   -- | Character to fill for alignment.
@@ -25,13 +31,13 @@ data FormatStyle s = FormatStyle
   -- | Whether the @0@ flag is specified (asking for sign aware zero left-padding).
   , signZero  :: !Bool
   -- | Expected width for the output.
-  , width     :: !(Maybe (Parameter s))
+  , width     :: !(Maybe p)
   -- | Precision for numeric types, or maximum width for string types.
-  , precision :: !(Maybe (Parameter s))
-  } deriving (Show, Eq)
+  , precision :: !(Maybe p)
+  } deriving (Show, Eq, Functor, Foldable, Traversable)
 
 -- | Default format style, corresponding to empty format argument.
-defaultFormatStyle :: FormatStyle s
+defaultFormatStyle :: FormatStyle p
 defaultFormatStyle = FormatStyle
   { alignment = Nothing
   , fillChar  = Nothing
@@ -59,23 +65,38 @@ data Parameter s
   deriving (Show, Eq)
 
 -- | Format function from @a@ to format output @s@.
-type FormatFunc s a = FormatStyle s -> a -> s
+type FormatFunc s a = FormatStyle Int -> a -> Target s
+
+-- | Format target string type.
+class Monoid (Target s) => FormatTarget s where
+  -- | Target string type, notably 'ShowS' for 'String' and 'Builder' for 'Text'.
+  type Target s :: Type
+  -- | Embed a string fragment into the target string type.
+  plain :: s -> Target s
+
+instance FormatTarget String where
+  type Target String = ShowS
+  plain = showString
+
+instance FormatTarget Text where
+  type Target Text = Builder
+  plain = TB.fromText
 
 -- | Fragment of a format string, parametric in the format string type.
 data FormatFragment s
   -- | Pure text without format instructions.
   = TextFragment s
   -- | Format argument.
-  | ArgFragment (FormatArgument s)
+  | ArgFragment (FormatArgument s (Parameter s))
   deriving (Show, Eq)
 
 -- | Format argument.
-data FormatArgument s
+data FormatArgument s p
   = FormatArgument
   -- | Select the argument as contents for formatting.
   { selector :: Selector s
   -- | Format style for the selected argument.
-  , style    :: FormatStyle s
+  , style    :: FormatStyle p
   -- | Format type, how to format the selected argument.
   , kind     :: s
   } deriving (Show, Eq)

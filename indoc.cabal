@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Data.String.Format
+      Data.String.Format.Dynamic
       Data.String.Format.Parser
       Data.String.Indoc
       Data.String.Unindent
@@ -53,9 +54,12 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       base >=4.7 && <5
+    , hashable
     , mtl
     , template-haskell
     , text
+    , unordered-containers
+    , vector
   default-language: GHC2021
 
 test-suite indoc-test
@@ -85,8 +89,11 @@ test-suite indoc-test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , hashable
     , hspec
     , indoc
     , mtl
     , text
+    , unordered-containers
+    , vector
   default-language: GHC2021

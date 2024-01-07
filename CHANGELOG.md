@@ -12,4 +12,5 @@ and this project adheres to the
 
 - add `Data.String.Unindent.unindent` function: runtime unindent string values
 - add `Data.String.Indoc.indoc` quasi-quoter: compile time unindent string literals
-- add `Data.String.Format` and parser: Rust-style `format_args` format strings
+- add `Data.String.Format`: Rust-style `format_args` format strings
+  - runtime parsing and rendering for the format string

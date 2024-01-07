@@ -2,6 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Data.String.Format.Parser
   ( Source (..)
+  , Format
   , parseFormat
   , parseFormatArgument
   ) where
@@ -70,13 +71,16 @@ instance Source Text where
   fromString = T.pack
   toString = T.unpack
 
+-- | Parsed format string.
+type Format s = [FormatFragment s]
+
 -- | Parse a full format string.
-parseFormat :: Source s => s -> Either String [FormatFragment s]
-parseFormat s = bimap errorString fst $ runP full (PState s 0 0)
+parseFormat :: Source s => s -> Either String (Format s)
+parseFormat = runP full
 
 -- | Parse a single format argument.
-parseFormatArgument :: Source s => s -> Either String (FormatArgument s)
-parseFormatArgument s = bimap errorString fst $ runP formatArgument (PState s 0 0)
+parseFormatArgument :: Source s => s -> Either String (FormatArgument s (Parameter s))
+parseFormatArgument = runP formatArgument
 
 data PState s = PState
   { inputSource :: !s
@@ -126,6 +130,9 @@ newtype P s a = P { runP :: PState s -> Either Error (a, PState s) }
   deriving (Functor, Applicative, Monad, MonadState (PState s), MonadError Error)
     via StateT (PState s) (Except Error)
 
+runP :: P s a -> s -> Either String a
+runP p s = bimap errorString fst (p.runP (PState s 0 0))
+
 instance Alternative (P s) where
   empty = throw []
   P f <|> P g = P $ \st -> case (f st, g st) of
@@ -135,7 +142,7 @@ instance Alternative (P s) where
 
 throw :: [Message] -> P s a
 throw msgs = do
-  n <- gets byteOffset
+  n <- gets (.byteOffset)
   throwError (Error n msgs)
 
 lookahead :: P s a -> P s ()
@@ -146,15 +153,15 @@ lookahead p = do
 
 eof :: Source s => String -> P s ()
 eof name = do
-  s <- gets inputSource
+  s <- gets (.inputSource)
   unless (null s) (throw [Unexpected ("extra text in " <> name <> ": " <> toString s)])
 
 scoped :: P s t -> P t a -> P s a
 scoped scope p = do
-  offset0 <- gets byteOffset
+  offset0 <- gets (.byteOffset)
   t <- scope
   PState s n offset <- get
-  (a, PState _ n' _) <- case runP p (PState t n offset0) of
+  (a, PState _ n' _) <- case p.runP (PState t n offset0) of
     Right r  -> pure r
     Left err -> throwError err
   put (PState s n' offset)
@@ -206,7 +213,7 @@ count = Selector <$> argument <* char '$' <|> Constant <$> integer
 argument :: Source s => P s (Selector s)
 argument = Name <$> identifier <|> Index <$> integer
 
-formatArgument :: Source s => P s (FormatArgument s)
+formatArgument :: Source s => P s (FormatArgument s (Parameter s))
 formatArgument = do
   selector <- argument <|> nextIndex
   spec <- optional $ do
