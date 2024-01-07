@@ -91,7 +91,7 @@ data PState s = PState
 data Error = Error
   { position :: !Int
   , messages :: [Message]
-  } deriving (Show, Eq)
+  } deriving stock (Show, Eq)
 
 splitMessage :: [Message] -> ([String], [String])
 splitMessage [] = ([], [])
@@ -124,7 +124,7 @@ instance Semigroup Error where
 data Message
   = Unexpected String
   | Expected String
-  deriving (Show, Eq, Ord)
+  deriving stock (Show, Eq, Ord)
 
 newtype P s a = P { runP :: PState s -> Either Error (a, PState s) }
   deriving (Functor, Applicative, Monad, MonadState (PState s), MonadError Error)

@@ -32,7 +32,7 @@ data FormatError s = FormatError
   { selector  :: Selector s
   -- | Detailed error message.
   , errorKind :: ErrorKind s
-  } deriving (Show, Eq)
+  } deriving stock (Show, Eq)
 
 -- | Error kind for rendering a format string.
 data ErrorKind s
@@ -42,7 +42,7 @@ data ErrorKind s
   | CannotUseAsLength
   -- | A format argument does not support to be rendered as the specified kind.
   | UnsupportedKind s
-  deriving (Show, Eq)
+  deriving stock (Show, Eq)
 
 -- | Dynamic format argument.
 data DynamicArgument s

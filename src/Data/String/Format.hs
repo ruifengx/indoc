@@ -34,7 +34,7 @@ data FormatStyle p = FormatStyle
   , width     :: !(Maybe p)
   -- | Precision for numeric types, or maximum width for string types.
   , precision :: !(Maybe p)
-  } deriving (Show, Eq, Functor, Foldable, Traversable)
+  } deriving stock (Show, Eq, Functor, Foldable, Traversable)
 
 -- | Default format style, corresponding to empty format argument.
 defaultFormatStyle :: FormatStyle p
@@ -54,7 +54,7 @@ data Alignment
   = ALeft    -- ^ Left alignment (@<@).
   | ACentre  -- ^ Centre alignment (@^@).
   | ARight   -- ^ Right alignment (@>@).
-  deriving (Show, Eq)
+  deriving stock (Show, Eq)
 
 -- | Width and precision parameter.
 data Parameter s
@@ -62,7 +62,7 @@ data Parameter s
   = Constant !Int
   -- | Parameter from format argument.
   | Selector (Selector s)
-  deriving (Show, Eq)
+  deriving stock (Show, Eq)
 
 -- | Format function from @a@ to format output @s@.
 type FormatFunc s a = FormatStyle Int -> a -> Target s
@@ -88,7 +88,7 @@ data FormatFragment s
   = TextFragment s
   -- | Format argument.
   | ArgFragment (FormatArgument s (Parameter s))
-  deriving (Show, Eq)
+  deriving stock (Show, Eq)
 
 -- | Format argument.
 data FormatArgument s p
@@ -99,10 +99,10 @@ data FormatArgument s p
   , style    :: FormatStyle p
   -- | Format type, how to format the selected argument.
   , kind     :: s
-  } deriving (Show, Eq)
+  } deriving stock (Show, Eq)
 
 -- | Selector for format arguments.
 data Selector s
   = Index Int -- ^ Select by argument index.
   | Name s    -- ^ Select by argument name.
-  deriving (Show, Eq)
+  deriving stock (Show, Eq)
