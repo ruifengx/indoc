@@ -17,14 +17,9 @@ import Data.Vector (Vector)
 import Data.Vector qualified as V
 
 import Data.String.Format
-  ( FormatArgument (..)
-  , FormatFragment (..)
-  , FormatFunc
-  , FormatTarget (..)
-  , Parameter (..)
-  , Selector (..)
-  )
+  (FormatArgument (..), FormatFragment (..), Parameter (..), RawFormatFunc, Selector (..))
 import Data.String.Format.Parser (Format)
+import Data.String.Format.StringBuilder (Builder, StringBuilder (BuildOutput, embed))
 
 -- | Runtime error for rendering a format string.
 data FormatError s = FormatError
@@ -45,47 +40,56 @@ data ErrorKind s
   deriving stock (Show, Eq)
 
 -- | Dynamic format argument.
-data DynamicArgument s
+data DynamicArgument s b
   = forall a. DynamicArgument
   -- | Erased raw value of the argument.
   { rawValue        :: !a
   -- | Extract the raw value as length.
   , extractCount    :: Maybe Int
   -- | Format the raw value using provided style, keyed with format kind.
-  , formatFunctions :: HashMap s (FormatFunc s a)
+  , formatFunctions :: HashMap s (RawFormatFunc b a)
   }
 
 -- | Collected format arguments.
-data Arguments s = Arguments
+data Arguments s b = Arguments
   -- | Positional format arguments, indexed with natural numbers.
-  { positional :: Vector (DynamicArgument s)
+  { positional :: Vector (DynamicArgument s b)
   -- | Named format arguments, indexed with their names.
-  , named      :: HashMap s (DynamicArgument s)
+  , named      :: HashMap s (DynamicArgument s b)
   }
 
 -- | Render the parsed format string with given arguments.
-render :: (FormatTarget s, Hashable s) => Format s -> Arguments s -> Either (FormatError s) (Target s)
+render :: (StringBuilder b, Hashable s, s ~ BuildOutput b)
+  => Format s
+  -> Arguments s b
+  -> Either (FormatError s) (Builder b)
 render fmt args = fold <$> traverse (renderFragment args) fmt
 
 -- | Render a single format fragment with given arguments.
-renderFragment :: (FormatTarget s, Hashable s) => Arguments s -> FormatFragment s -> Either (FormatError s) (Target s)
-renderFragment _    (TextFragment text) = Right (plain text)
+renderFragment :: (StringBuilder b, Hashable s, s ~ BuildOutput b)
+  => Arguments s b
+  -> FormatFragment s
+  -> Either (FormatError s) (Builder b)
+renderFragment _    (TextFragment text) = Right (embed text)
 renderFragment args (ArgFragment fmt) = do
   arg <- resolveSelector args fmt.selector
   style <- traverse (resolveParameter args) fmt.style
   renderArgument arg (fmt { style })
 
-renderArgument :: Hashable s => DynamicArgument s -> FormatArgument s Int -> Either (FormatError s) (Target s)
+renderArgument :: Hashable s
+  => DynamicArgument s b
+  -> FormatArgument s Int
+  -> Either (FormatError s) (Builder b)
 renderArgument DynamicArgument { rawValue, formatFunctions } fmt =
   maybeToEither (FormatError fmt.selector (UnsupportedKind fmt.kind))
     ((\func -> func fmt.style rawValue) <$> formatFunctions M.!? fmt.kind)
 
-resolveSelector :: Hashable s => Arguments s -> Selector s -> Either (FormatError s) (DynamicArgument s)
+resolveSelector :: Hashable s => Arguments s b -> Selector s -> Either (FormatError s) (DynamicArgument s b)
 resolveSelector args s = maybeToEither (FormatError s Missing) (fetch s)
   where fetch (Index n) = args.positional V.!? n
         fetch (Name n)  = args.named M.!? n
 
-resolveParameter :: Hashable s => Arguments s -> Parameter s -> Either (FormatError s) Int
+resolveParameter :: Hashable s => Arguments s b -> Parameter s -> Either (FormatError s) Int
 resolveParameter _    (Constant k) = Right k
 resolveParameter args (Selector s) = do
   arg <- resolveSelector args s

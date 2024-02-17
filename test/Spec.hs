@@ -11,9 +11,14 @@ import Data.String.Format
   , Selector (..)
   , defaultFormatStyle
   )
+import Data.String.Format.Class (Debug (fmtDebug))
 import Data.String.Format.Parser (parseFormat, parseFormatArgument)
+import Data.String.Format.StringBuilder (build)
 import Data.String.Indoc (indoc)
 import Data.String.Unindent (unindent)
+import Data.Text qualified as T
+import Data.Text.Lazy.Builder qualified as TB
+import GHC.Generics (Generic, Generically (Generically))
 
 main :: IO ()
 main = hspec do
@@ -198,3 +203,35 @@ main = hspec do
           }
         , kind = "?"
         }
+  describe "deriving Debug via Generically" do
+    let pr alt = build @(_ TB.Builder) . fmtDebug defaultFormatStyle { alternate = alt }
+    it "correctly prints field-less ADT" do
+      let t = Bin (42 :: Int) Leaf Leaf
+      pr False t `shouldBe` T.pack "Bin(42,Leaf,Leaf)"
+      pr True t `shouldBe` T.pack [indoc|
+          Bin(
+            42,
+            Leaf,
+            Leaf
+          )|]
+    it "correctly prints ADT with fields" do
+      let t = RBin { _val = 42 :: Int, _left = RLeaf, _right = RLeaf }
+      pr False t `shouldBe` T.pack "RBin{_val=42,_left=RLeaf,_right=RLeaf}"
+      pr True t `shouldBe` T.pack [indoc|
+          RBin {
+            _val = 42,
+            _left = RLeaf,
+            _right = RLeaf
+          }|]
+
+data Tree a
+  = Leaf
+  | Bin a (Tree a) (Tree a)
+  deriving stock Generic
+  deriving Debug via Generically (Tree a)
+
+data RTree a
+  = RLeaf
+  | RBin { _val :: a, _left :: RTree a, _right :: RTree a }
+  deriving stock Generic
+  deriving Debug via Generically (RTree a)

@@ -60,6 +60,7 @@ ghc-options:
 - -Wmissing-home-modules
 - -Wpartial-fields
 - -Wredundant-constraints
+- -Wmissing-deriving-strategies
 
 library:
   source-dirs: src

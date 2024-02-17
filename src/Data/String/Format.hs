@@ -4,17 +4,14 @@ module Data.String.Format
   , defaultFormatStyle
   , Alignment (..)
   , Parameter (..)
-  , FormatTarget (..)
   , FormatFunc
+  , RawFormatFunc
   , FormatFragment (..)
   , FormatArgument (..)
   , Selector (..)
   ) where
 
-import Data.Kind (Type)
-import Data.Text (Text)
-import Data.Text.Lazy.Builder (Builder)
-import Data.Text.Lazy.Builder qualified as TB
+import Data.String.Format.StringBuilder (Builder, StringBuilder)
 
 -- | Format style information extracted from the format string.
 data FormatStyle p = FormatStyle
@@ -65,22 +62,10 @@ data Parameter s
   deriving stock (Show, Eq)
 
 -- | Format function from @a@ to format output @s@.
-type FormatFunc s a = FormatStyle Int -> a -> Target s
+type FormatFunc s a = StringBuilder s => RawFormatFunc s a
 
--- | Format target string type.
-class Monoid (Target s) => FormatTarget s where
-  -- | Target string type, notably 'ShowS' for 'String' and 'Builder' for 'Text'.
-  type Target s :: Type
-  -- | Embed a string fragment into the target string type.
-  plain :: s -> Target s
-
-instance FormatTarget String where
-  type Target String = ShowS
-  plain = showString
-
-instance FormatTarget Text where
-  type Target Text = Builder
-  plain = TB.fromText
+-- | Raw format function from @a@ to format output @s@.
+type RawFormatFunc s a = FormatStyle Int -> a -> Builder s
 
 -- | Fragment of a format string, parametric in the format string type.
 data FormatFragment s

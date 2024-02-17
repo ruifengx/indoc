@@ -26,8 +26,10 @@ source-repository head
 library
   exposed-modules:
       Data.String.Format
+      Data.String.Format.Class
       Data.String.Format.Dynamic
       Data.String.Format.Parser
+      Data.String.Format.StringBuilder
       Data.String.Indoc
       Data.String.Unindent
   other-modules:
@@ -51,7 +53,7 @@ library
       NoFieldSelectors
       DuplicateRecordFields
       OverloadedRecordDot
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wmissing-deriving-strategies
   build-depends:
       base >=4.7 && <5
     , hashable
@@ -86,7 +88,7 @@ test-suite indoc-test
       NoFieldSelectors
       DuplicateRecordFields
       OverloadedRecordDot
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wmissing-deriving-strategies -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , hashable
